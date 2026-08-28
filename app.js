@@ -116,52 +116,77 @@ function audioPath(kind,key){return kind==='ambience'?SOUND_FILES.ambience[key]:
 function makeAudio(kind,key,volume,loop=false){const a=new Audio(audioPath(kind,key));a.preload='auto';a.loop=loop;a.volume=Math.max(0,Math.min(1,volume*masterVolume));a.addEventListener('error',()=>setAudioStatus('Missing audio file: '+audioPath(kind,key)));return a}
 function setAudioStatus(t){const e=document.getElementById('audioStatus');if(e)e.textContent=t}
 
-async function unlockAudio(){
-  if(audioUnlocked)return true;
-  if(audioUnlockPromise)return audioUnlockPromise;
-  audioUnlockPromise=(async()=>{
-    const files=[...Object.values(SOUND_FILES.ambience||{}),...Object.values(SOUND_FILES.cues||{})];
-    for(const src of files){
-      try{
-        const a=new Audio(src);
-        a.preload='auto';
-        a.muted=true;
-        a.volume=0;
-        primedAudio.push(a);
-        await a.play();
-        a.pause();
-        a.currentTime=0;
-        a.muted=false;
-      }catch(e){}
-    }
-    audioUnlocked=true;
-    setAudioStatus('Audio ready.');
-    return true;
-  })();
-  return audioUnlockPromise;
+function unlockAudio(){
+  if(audioUnlocked)return Promise.resolve(true);
+  audioUnlocked=true;
+
+  const files=[
+    ...Object.values(SOUND_FILES.ambience||{}),
+    ...Object.values(SOUND_FILES.cues||{})
+  ];
+
+  const attempts=[];
+  for(const src of files){
+    try{
+      const a=new Audio(src);
+      a.preload='auto';
+      a.muted=true;
+      a.volume=0;
+      primedAudio.push(a);
+
+      // IMPORTANT: invoke every play() synchronously during the same user gesture.
+      // Awaiting each file one-by-one causes browser activation to expire.
+      const p=a.play();
+      if(p&&typeof p.then==='function'){
+        attempts.push(
+          p.then(()=>{
+            a.pause();
+            a.currentTime=0;
+            a.muted=false;
+          }).catch(()=>{})
+        );
+      }
+    }catch(e){}
+  }
+
+  setAudioStatus('Audio ready.');
+  return Promise.allSettled(attempts).then(()=>true);
 }
-async function playAmbience(key){
-  await unlockAudio();
+
+function playAmbience(key){
+  // Prime the sound set, but do NOT await before playing the requested sound.
+  // This keeps the requested play() inside the user's click event.
+  unlockAudio();
+
   stopAmbience(false);
   const a=makeAudio('ambience',key,ambienceVolume,true);
   activeAmbience=a;
-  try{
-    await a.play();
+
+  const p=a.play();
+  if(p&&typeof p.then==='function'){
+    p.then(()=>setAudioStatus('Playing ambience: '+key))
+     .catch(err=>{
+       activeAmbience=null;
+       setAudioStatus('Could not play '+audioPath('ambience',key)+'. Refresh once, then click the soundboard again.');
+     });
+  }else{
     setAudioStatus('Playing ambience: '+key);
-  }catch(err){
-    setAudioStatus('Audio could not start. Check that '+audioPath('ambience',key)+' exists.');
   }
 }
-async function playCue(key){
-  await unlockAudio();
+
+function playCue(key){
+  unlockAudio();
+
   const a=makeAudio('cue',key,cueVolume,false);
   activeCues.push(a);
   a.onended=()=>activeCues=activeCues.filter(x=>x!==a);
-  try{
-    await a.play();
-  }catch(err){
-    activeCues=activeCues.filter(x=>x!==a);
-    setAudioStatus('Audio could not start. Check that '+audioPath('cue',key)+' exists.');
+
+  const p=a.play();
+  if(p&&typeof p.then==='function'){
+    p.catch(err=>{
+      activeCues=activeCues.filter(x=>x!==a);
+      setAudioStatus('Could not play '+audioPath('cue',key)+'. Refresh once, then click the soundboard again.');
+    });
   }
 }
 function stopAmbience(fade=true){if(!activeAmbience)return;const a=activeAmbience;activeAmbience=null;if(!fade){a.pause();a.currentTime=0;return}clearInterval(fadeTimer);const s=a.volume;let i=0;fadeTimer=setInterval(()=>{i++;a.volume=Math.max(0,s*(1-i/12));if(i>=12){clearInterval(fadeTimer);a.pause();a.currentTime=0}},55)}
