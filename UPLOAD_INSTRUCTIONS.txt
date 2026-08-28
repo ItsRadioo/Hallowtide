@@ -1,0 +1,12 @@
+HALLOWTIDE — GITHUB UPLOAD
+
+1. Upload all files found at the top level of this package to the repository root.
+2. Open AUDIO_FILES_UPLOAD.
+3. Upload every .wav file from inside that folder to the SAME repository root.
+4. Do not upload AUDIO_FILES_UPLOAD as a folder.
+5. GitHub should therefore show app.js, sounds.js, amb-forest.wav,
+   amb-cemetery.wav, cue-bell.wav, etc. all at the same level.
+
+Cemetery audio:
+Filename: amb-cemetery.wav
+Format: PCM 16-bit WAV, mono, 32000 Hz
