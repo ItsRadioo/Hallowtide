@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#171513">
+<meta name="description" content="Hallowtide: The Hollowing of Blackwood campaign console">
+<title>Hallowtide Campaign Console</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="brand">HALLOWTIDE</div>
+  <span class="badge" id="modeBadge">Mode: unset</span>
+  <button class="btn" id="dmMode">DM Mode</button>
+  <button class="btn" id="playerMode">Player Mode</button>
+  <button class="btn" id="stopAudio">Stop Audio</button>
+</header>
+<div class="layout">
+<nav id="nav">
+  <button class="btn" data-page="dashboard">Dashboard</button>
+  <button class="btn dm-only" data-page="sessions">Session Runner</button>
+  <button class="btn dm-only" data-page="npcs">NPCs</button>
+  <button class="btn dm-only" data-page="clues">Clue Tracker</button>
+  <button class="btn dm-only" data-page="bestiary">Bestiary</button>
+  <button class="btn" data-page="maps">Maps</button>
+  <button class="btn" data-page="handouts">Handouts</button>
+  <button class="btn dm-only" data-page="soundboard">Soundboard</button>
+  <button class="btn dm-only" data-page="notes">DM Notes</button>
+</nav>
+<main id="content"></main>
+</div>
+<script src="sounds.js"></script>
+<script src="app.js" defer></script>
+</body>
+</html>

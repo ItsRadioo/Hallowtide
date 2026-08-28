@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#171513">
+<meta name="description" content="Hallowtide: The Hollowing of Blackwood campaign system">
+<title>Hallowtide Campaign System</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.landing{min-height:100vh;display:grid;place-items:center;padding:24px}
+.landing main{width:min(760px,100%)}
+.landing h1{font-size:clamp(38px,7vw,64px);margin:0 0 6px}
+.landing .sub{color:var(--muted);margin-bottom:28px}
+.mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.mode-card{display:block;text-decoration:none;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+.mode-card:hover{border-color:var(--accent)}
+.mode-card h2{margin-top:0}
+.repo-note{margin-top:18px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body class="landing">
+<main>
+<h1>HALLOWTIDE</h1>
+<div class="sub">The Hollowing of Blackwood — Campaign System</div>
+<div class="mode-grid">
+<a class="mode-card" href="campaign.html?mode=dm">
+<h2>DM Console</h2>
+<p>Full campaign runner, keyed maps, clue tracker, NPCs, bestiary, Hollowing meter, notes and soundboard.</p>
+</a>
+<a class="mode-card" href="campaign.html?mode=player">
+<h2>Player Display</h2>
+<p>Player-safe maps and handouts only, suitable for a second browser window or shared display.</p>
+</a>
+</div>
+<div class="repo-note">Flat GitHub Pages layout — no subfolders required.</div>
+</main>
+</body>
+</html>
