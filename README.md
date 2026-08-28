@@ -102,3 +102,13 @@ The DM sees the complete image. The player projection uses the same file but cro
 
 ## Custom ceremony cue
 `cue-gift-for-the-wanderers.wav` is included and wired into the Gift for the Wandering scripted sequence.
+
+## Audio upload organization
+
+Audio assets are grouped in `AUDIO_FILES_UPLOAD/` only inside this download package.
+Move the audio files themselves into the GitHub repository root when uploading.
+The application does not reference the folder name.
+
+Combat ambience and the heartbeat cue were removed. The soundboard now primes
+browser audio on the first user interaction so scripted cues can continue without
+repeated autoplay-block messages.

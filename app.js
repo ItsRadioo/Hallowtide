@@ -108,21 +108,72 @@ let masterVolume=Number(sessionStorage.getItem('masterVolume')||0.72);
 let ambienceVolume=Number(sessionStorage.getItem('ambienceVolume')||0.48);
 let cueVolume=Number(sessionStorage.getItem('cueVolume')||0.90);
 let activeAmbience=null,activeCues=[],seqTimers=[],fadeTimer=null;
+let audioUnlocked=false;
+let audioUnlockPromise=null;
+const primedAudio=[];
+
 function audioPath(kind,key){return kind==='ambience'?SOUND_FILES.ambience[key]:SOUND_FILES.cues[key]}
 function makeAudio(kind,key,volume,loop=false){const a=new Audio(audioPath(kind,key));a.preload='auto';a.loop=loop;a.volume=Math.max(0,Math.min(1,volume*masterVolume));a.addEventListener('error',()=>setAudioStatus('Missing audio file: '+audioPath(kind,key)));return a}
 function setAudioStatus(t){const e=document.getElementById('audioStatus');if(e)e.textContent=t}
-function playAmbience(key){stopAmbience(false);const a=makeAudio('ambience',key,ambienceVolume,true);activeAmbience=a;a.play().then(()=>setAudioStatus('Playing ambience: '+key)).catch(()=>setAudioStatus('Browser blocked playback. Click again.'))}
-function playCue(key){const a=makeAudio('cue',key,cueVolume,false);activeCues.push(a);a.onended=()=>activeCues=activeCues.filter(x=>x!==a);a.play().catch(()=>setAudioStatus('Browser blocked playback. Click again.'))}
+
+async function unlockAudio(){
+  if(audioUnlocked)return true;
+  if(audioUnlockPromise)return audioUnlockPromise;
+  audioUnlockPromise=(async()=>{
+    const files=[...Object.values(SOUND_FILES.ambience||{}),...Object.values(SOUND_FILES.cues||{})];
+    for(const src of files){
+      try{
+        const a=new Audio(src);
+        a.preload='auto';
+        a.muted=true;
+        a.volume=0;
+        primedAudio.push(a);
+        await a.play();
+        a.pause();
+        a.currentTime=0;
+        a.muted=false;
+      }catch(e){}
+    }
+    audioUnlocked=true;
+    setAudioStatus('Audio ready.');
+    return true;
+  })();
+  return audioUnlockPromise;
+}
+async function playAmbience(key){
+  await unlockAudio();
+  stopAmbience(false);
+  const a=makeAudio('ambience',key,ambienceVolume,true);
+  activeAmbience=a;
+  try{
+    await a.play();
+    setAudioStatus('Playing ambience: '+key);
+  }catch(err){
+    setAudioStatus('Audio could not start. Check that '+audioPath('ambience',key)+' exists.');
+  }
+}
+async function playCue(key){
+  await unlockAudio();
+  const a=makeAudio('cue',key,cueVolume,false);
+  activeCues.push(a);
+  a.onended=()=>activeCues=activeCues.filter(x=>x!==a);
+  try{
+    await a.play();
+  }catch(err){
+    activeCues=activeCues.filter(x=>x!==a);
+    setAudioStatus('Audio could not start. Check that '+audioPath('cue',key)+' exists.');
+  }
+}
 function stopAmbience(fade=true){if(!activeAmbience)return;const a=activeAmbience;activeAmbience=null;if(!fade){a.pause();a.currentTime=0;return}clearInterval(fadeTimer);const s=a.volume;let i=0;fadeTimer=setInterval(()=>{i++;a.volume=Math.max(0,s*(1-i/12));if(i>=12){clearInterval(fadeTimer);a.pause();a.currentTime=0}},55)}
 function stopAll(){seqTimers.forEach(clearTimeout);seqTimers=[];stopAmbience(false);activeCues.forEach(a=>{try{a.pause();a.currentTime=0}catch{}});activeCues=[];setAudioStatus('Stopped.')}
 document.getElementById('stopAudio').onclick=stopAll;
 function seq(ms,fn){seqTimers.push(setTimeout(fn,ms))}
-function sequence(name){stopAll();
+function sequence(name){unlockAudio();stopAll();
  if(name==='lighting'){playAmbience('festival');setAudioStatus('Running: First Lighting');seq(4500,()=>{stopAmbience(true);playCue('fire')});seq(6200,()=>playCue('bell'));seq(8400,()=>playCue('bell'));seq(10600,()=>playCue('bell'));seq(14500,()=>playCue('fourth'));seq(17000,()=>playCue('scream'));seq(18200,()=>playAmbience('hollow'))}
  if(name==='wandering'){playAmbience('forest');setAudioStatus('Running: Gift for the Wandering');seq(1800,()=>playCue('gift'));seq(4200,()=>playCue('knock'));seq(7000,()=>playCue('whisper'));seq(9800,()=>playCue('knock'));seq(10300,()=>playCue('knock'));seq(10800,()=>playCue('knock'));seq(12300,()=>playAmbience('cemetery'))}
  if(name==='names'){playAmbience('cemetery');setAudioStatus('Running: Night of Names');seq(5000,()=>playCue('bell'));seq(8500,()=>playCue('whisper'));seq(12200,()=>playCue('sting'));seq(13400,()=>playAmbience('hollow'))}
- if(name==='masquerade'){playAmbience('festival');setAudioStatus('Running: Masquerade Reveal');seq(5500,()=>stopAmbience(true));seq(6400,()=>playCue('sting'));seq(7600,()=>playCue('scream'));seq(9000,()=>playAmbience('combat'))}
- if(name==='white'){playAmbience('combat');setAudioStatus('Running: White Flame Ending');seq(4200,()=>stopAmbience(true));seq(5200,()=>playCue('sting'));seq(7200,()=>playCue('white'));seq(10000,()=>playAmbience('forest'))}}
+ if(name==='masquerade'){playAmbience('festival');setAudioStatus('Running: Masquerade Reveal');seq(5500,()=>stopAmbience(true));seq(6400,()=>playCue('sting'));seq(7600,()=>playCue('scream'));seq(9000,()=>playAmbience('hollow'))}
+ if(name==='white'){playAmbience('hollow');setAudioStatus('Running: White Flame Ending');seq(4200,()=>stopAmbience(true));seq(5200,()=>playCue('sting'));seq(7200,()=>playCue('white'));seq(10000,()=>playAmbience('forest'))}}
 function soundboard(){
  return `<h1>Soundboard</h1>
  <div class="card"><div class="audio-controls">
@@ -134,12 +185,12 @@ function soundboard(){
  <div class="card"><h3>Ambient Beds</h3><div class="soundgrid">
  <button class="btn" data-amb="festival">🎃 Festival</button><button class="btn" data-amb="forest">🌲 Forest</button>
  <button class="btn" data-amb="cemetery">🪦 Cemetery</button><button class="btn" data-amb="hollow">🌑 Hollow Realm</button>
- <button class="btn" data-amb="combat">⚔️ Dread Rising</button><button class="btn" data-amb="rain">🌧️ Rain</button></div></div>
+ <button class="btn" data-amb="rain">🌧️ Rain</button></div></div>
  <div class="card"><h3>One-Shot Cues</h3><div class="soundgrid">
  <button class="btn" data-cue="bell">🔔 Bell</button><button class="btn" data-cue="fourth">🔔 Fourth Bell</button>
  <button class="btn" data-cue="knock">✊ Three Knocks</button><button class="btn" data-cue="whisper">👤 Whisper</button>
  <button class="btn" data-cue="scream">😱 Scream</button><button class="btn" data-cue="fire">🔥 Flame Dies</button>
- <button class="btn" data-cue="thunder">⚡ Thunder</button><button class="btn" data-cue="heartbeat">🫀 Heartbeat</button>
+ <button class="btn" data-cue="thunder">⚡ Thunder</button>
  <button class="btn" data-cue="sting">❗ Horror Sting</button><button class="btn" data-cue="white">⚪ White Flame</button><button class="btn" data-cue="gift">🧒 Gift for the Wanderers</button></div></div>
  <div class="card"><h3>Scripted Sequences</h3><div class="soundgrid">
  <button class="btn primary" data-seq="lighting">First Lighting</button><button class="btn primary" data-seq="wandering">Gift for the Wandering</button>
@@ -452,6 +503,13 @@ window.addEventListener('storage',e=>{
 });
 window.addEventListener('resize',()=>redrawFog());
 // ---------------------------------------------------------------------------
+
+function hallowtideAudioUnlock(){
+  unlockAudio();
+}
+document.addEventListener('pointerdown',hallowtideAudioUnlock,{once:true});
+document.addEventListener('keydown',hallowtideAudioUnlock,{once:true});
+
 function render(){
  document.querySelectorAll('.dm-only').forEach(x=>x.classList.toggle('hidden',MODE!=='dm'));
  let h = PAGE==='dashboard'?dashboard():PAGE==='sessions'?sessions():PAGE==='npcs'?npcs():PAGE==='clues'?clues():PAGE==='bestiary'?bestiary():PAGE==='maps'?maps():PAGE==='handouts'?handouts():PAGE==='soundboard'?soundboard():notes();

@@ -1,0 +1,8 @@
+Hallowtide GitHub Web-Ready Build
+
+All files in this package are intended to be uploaded directly to the repository root.
+
+The large ambience WAV files were re-encoded as 32 kHz mono PCM WAV files.
+No filenames or JavaScript sound references were changed.
+
+Every individual file in this build is below 10 MB.
