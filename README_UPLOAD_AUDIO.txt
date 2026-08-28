@@ -1,16 +1,12 @@
-HALLOWTIDE AUDIO UPLOAD
+HALLOWTIDE AUDIO FILES — UPLOAD THESE TO THE REPOSITORY ROOT
 
-This folder is ONLY for organizing the download package.
+This folder exists ONLY inside the download ZIP to keep the audio together.
 
-For GitHub:
-1. Open this folder.
-2. Select the audio files inside it.
-3. Upload those files directly into the ROOT of your Hallowtide repository.
-4. Do NOT upload this folder itself.
+IMPORTANT:
+• Open this folder.
+• Select ALL .wav files inside.
+• Upload them directly into the ROOT of the GitHub repository.
+• Do NOT upload this folder itself.
+• `amb-cemetery.wav` must sit beside app.js, sounds.js, index.html, etc.
 
-The program still references plain root filenames such as:
-amb-forest.wav
-cue-bell.wav
-cue-gift-for-the-wanderers.wav
-
-There are NO references to AUDIO_FILES_UPLOAD in the application code.
+The program references `amb-cemetery.wav` directly, NOT a folder path.
